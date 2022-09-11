@@ -5,6 +5,12 @@ A simple program for accessing the ItemEvents of openHAB by using the server-sen
 
 The openHAB Item Events can only received by using `SSE`!
 
+https://github.com/Michdo93/openHAB-Python-ItemEvents
+
+You can get more informations about the [ItemEvents here](https://www.openhab.org/docs/developer/utils/events.html#item-events).
+
+To test the ItemEvents, you can play around a bit using [CRUD](https://github.com/Michdo93/openhab_python_crud).
+
 ## Preparation
 
 You have to install following before you can use this python script:
@@ -54,13 +60,13 @@ Please make sure to replace `<your_email>@<your_provider>` with your email addre
 If you want to create a connection to your local `openHAB` instance you have to replace `<username>` and `<password>` with the username and password of your local openHAB account:
 
 ```
-#item_event = ItemEvent("http://<your_ip>:8080", "<username>", "<password>")
+item_event = ItemEvent("http://<your_ip>:8080", "<username>", "<password>")
 ```
 
 Maybe there is no username and password needed:
 
 ```
-#item_event = ItemEvent("http://<your_ip>:8080")
+item_event = ItemEvent("http://<your_ip>:8080")
 ```
 
 ### Retrieving all Item Events
@@ -207,4 +213,148 @@ for event in events:
         pass
     except Exception:
         pass    
+```
+
+### Retrieving ItemAddedEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemAddedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemRemovedEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemRemovedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemUpdatedEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemUpdatedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemCommandEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemCommandEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemStateEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemStateEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemStatePredictedEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemStatePredictedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemStateChangedEvent of an Item
+
+The function requires the name of the item as input parameter:
+
+```
+events =  item_event.ItemStateChangedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving GroupItemStateChangedEvent of an Item
+
+The function requires the names of the item and of the member as input parameter:
+
+```
+events =  item_event.GroupItemStateChangedEvent("testItem", "testGroup")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
 ```
