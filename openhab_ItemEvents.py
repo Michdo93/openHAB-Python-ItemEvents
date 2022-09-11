@@ -1,4 +1,3 @@
-import requests
 import sseclient
 import json
 
