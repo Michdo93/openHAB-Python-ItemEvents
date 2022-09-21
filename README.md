@@ -74,7 +74,7 @@ item_event = ItemEvent("http://<your_ip>:8080")
 You can retrieve all `Events` from all `Items` by using:
 
 ```
-events =  item_event.allEvents()
+events =  item_event.ItemEvent()
 ```
 
 You will get a `list` of `dictionaries` (`dict`) in `JSON` format. So you have to loop through it:
@@ -233,12 +233,60 @@ for event in events:
         print("Event could not be converted to JSON")
 ```
 
+### Retrieving ItemAddedEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemAddedEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemAddedEvent("*")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
 ### Retrieving ItemRemovedEvent of an Item
 
 The function requires the name of the item as input parameter:
 
 ```
 events =  item_event.ItemRemovedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemRemovedEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemRemovedEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemRemovedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
@@ -269,12 +317,60 @@ for event in events:
         print("Event could not be converted to JSON")
 ```
 
+### Retrieving ItemUpdatedEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemUpdatedEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemUpdatedEvent("*")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
 ### Retrieving ItemCommandEvent of an Item
 
 The function requires the name of the item as input parameter:
 
 ```
 events =  item_event.ItemCommandEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemCommandEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemCommandEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemCommandEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
@@ -305,6 +401,30 @@ for event in events:
         print("Event could not be converted to JSON")
 ```
 
+### Retrieving ItemStateEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemStateEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemStateEvent("*")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
 ### Retrieving ItemStatePredictedEvent of an Item
 
 The function requires the name of the item as input parameter:
@@ -323,12 +443,60 @@ for event in events:
         print("Event could not be converted to JSON")
 ```
 
+### Retrieving ItemStatePredictedEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemStatePredictedEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemStatePredictedEvent("*")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
 ### Retrieving ItemStateChangedEvent of an Item
 
 The function requires the name of the item as input parameter:
 
 ```
 events =  item_event.ItemStateChangedEvent("testItem")
+```
+
+Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
+
+```
+for event in events:
+    try:
+        print(json.loads(event.data))
+    except json.decoder.JSONDecodeError:
+        print("Event could not be converted to JSON")
+```
+
+### Retrieving ItemStateChangedEvent of all Items
+
+The function does not require a parameter:
+
+```
+events =  item_event.ItemStateChangedEvent()
+```
+
+Alternatively you can pass a `"*"`:
+
+```
+events =  item_event.ItemStateChangedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
