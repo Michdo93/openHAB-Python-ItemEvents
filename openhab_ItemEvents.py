@@ -15,28 +15,28 @@ class ItemEvent(object):
         else:
             return sseclient.SSEClient(url)
 
-    def allEvents(self):
+    def ItemEvent(self):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items")
 
-    def ItemAddedEvent(self, itemName:str):
+    def ItemAddedEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/added")
 
-    def ItemRemovedEvent(self, itemName:str):
+    def ItemRemovedEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/removed")
 
-    def ItemUpdatedEvent(self, itemName:str):
+    def ItemUpdatedEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/updated")
 
-    def ItemCommandEvent(self, itemName:str):
+    def ItemCommandEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/command")
 
-    def ItemStateEvent(self, itemName:str):
+    def ItemStateEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/state")
 
-    def ItemStatePredictedEvent(self, itemName:str):
+    def ItemStatePredictedEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/statepredicted")
 
-    def ItemStateChangedEvent(self, itemName:str):
+    def ItemStateChangedEvent(self, itemName:str = "*"):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items/{itemName}/statechanged")
 
     def GroupItemStateChangedEvent(self, itemName:str, memberName:str):
@@ -46,7 +46,7 @@ class ItemEvent(object):
 if __name__ == "__main__":
     #item_event = ItemEvent("http://<your_ip>:8080")
     item_event = ItemEvent("https://myopenhab.org", "<your_email>@<your_provider>", "<password>")
-    events =  item_event.allEvents()
+    events =  item_event.ItemEvent()
 
     for event in events:
         try:
