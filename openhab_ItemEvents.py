@@ -1,4 +1,4 @@
-import sseclient
+import requests
 import json
 
 class ItemEvent(object):
@@ -8,12 +8,13 @@ class ItemEvent(object):
         self.url:str = url
         self.username:str = username
         self.password:str = password
+        self.session = requests.Session()
 
     def __callURL(self, url:str):
         if self.username is not None and self.password is not None:
-            return sseclient.SSEClient(url, auth=(self.username, self.password))
+            pass
         else:
-            return sseclient.SSEClient(url)
+            return self.session.get(url, stream=True)
 
     def ItemEvent(self):
         return self.__callURL(self.url + f"/rest/events?topics=openhab/items")
@@ -44,12 +45,19 @@ class ItemEvent(object):
 
 # Main function.
 if __name__ == "__main__":
-    #item_event = ItemEvent("http://<your_ip>:8080")
-    item_event = ItemEvent("https://myopenhab.org", "<your_email>@<your_provider>", "<password>")
-    events =  item_event.ItemEvent()
+    item_event = ItemEvent("http://<your_ip>:8080")
+    #item_event = ItemEvent("https://myopenhab.org", "<your_email>@<your_provider>", "<password>")
+    response = item_event.ItemEvent()
+    
+    with response as events:
+        for line in events.iter_lines():
+            line = line.decode()
 
-    for event in events:
-        try:
-            print(json.loads(event.data))
-        except json.decoder.JSONDecodeError:
-            print("Event could not be converted to JSON")
+            if "data" in line:
+                line = line.replace("data: ", "")
+
+                try:
+                    data = json.loads(line)
+                    print(data)
+                except json.decoder.JSONDecodeError:
+                    print("Event could not be converted to JSON")
