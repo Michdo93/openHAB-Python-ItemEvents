@@ -143,57 +143,46 @@ with response as events:
 However, `ItemEvents` do not provide information about which type an `Item` has. An `ItemEvent` contains only the changes for an `Item` that are described by an `Event`. But you can also use the `ItemEvent` to query an `Item`. This does not require `SSE`, but a simple `REST` request:
 
 ```
-    with response as events:
-        for line in events.iter_lines():
-            line = line.decode()
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
 
-            if "data" in line:
-                line = line.replace("data: ", "")
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                topic = data.get("topic")
+                event_item_name = topic.split("/")[2]
 
                 try:
-                    data = json.loads(line)
-                    topic = data.get("topic")
-                    event_item_name = topic.split("/")[2]
-                    payload = json.loads(data.get("payload"))
-                    event_type = payload.get("type")
-                    event_value = payload.get("value")
-                    item_event_type = data.get("type")
+                    item_response = response.session.get("http://<your_ip>:8080/rest/items/" + event_item_name, auth=(<auth>), headers={"Content-type": "application/json"}, timeout=8)
+                    item_response.raise_for_status()
 
-                    #print(topic)
-                    #print(event_item_name)
-                    #print(payload)
-                    #print(event_type)
-                    #print(event_value)
-                    #print(item_event_type)
+                    if item_response.ok or item_response.status_code == 200:
+                        item = json.loads(item_response.text)
+                        item_link = item.get("link")
+                        item_state = item.get("state")
+                        item_state_description = item.get("stateDescription")
+                        item_editable = item.get("editable")
+                        item_type = item.get("type")
+                        item_name = item.get("name")
+                        item_label = item.get("label")
+                        item_group_names = item.get("groupNames")
 
-                    try:
-                        item_response = response.session.get("http://<your_ip>:8080/rest/items/" + event_item_name, auth=(<auth>), headers={"Content-type": "application/json"}, timeout=8)
-                        item_response.raise_for_status()
-
-                        if item_response.ok or item_response.status_code == 200:
-                            item = json.loads(item_response.text)
-                            item_link = item.get("link")
-                            item_state = item.get("state")
-                            item_state_description = item.get("stateDescription")
-                            item_editable = item.get("editable")
-                            item_type = item.get("type")
-                            item_name = item.get("name")
-                            item_label = item.get("label")
-                            item_group_names = item.get("groupNames")
-
-                            print(item_type)
-                            print(item_name)
-                            print(item_state)
-                    except requests.exceptions.HTTPError as errh:
-                        print(errh)
-                    except requests.exceptions.ConnectionError as errc:
-                        print(errc)
-                    except requests.exceptions.Timeout as errt:
-                        print(errt)
-                    except requests.exceptions.RequestException as err:
-                        print(err)
-                except json.decoder.JSONDecodeError:
-                    print("Event could not be converted to JSON")
+                        print(item_type)
+                        print(item_name)
+                        print(item_state)
+                except requests.exceptions.HTTPError as errh:
+                    print(errh)
+                except requests.exceptions.ConnectionError as errc:
+                    print(errc)
+                except requests.exceptions.Timeout as errt:
+                    print(errt)
+                except requests.exceptions.RequestException as err:
+                    print(err)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 What is missing in this pseudo code now is, `<base_url>`. You could use this for the cloud or for the local instance. A better approach is to use [CRUD](https://github.com/Michdo93/openhab_python_crud):
