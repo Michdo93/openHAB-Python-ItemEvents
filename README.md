@@ -196,7 +196,75 @@ However, `ItemEvents` do not provide information about which type an `Item` has.
                     print("Event could not be converted to JSON")
 ```
 
-What is missing in this pseudo code now is, `<base_url>`. You could use this for the cloud or for the local instance. A better approach is to use [CRUD](https://github.com/Michdo93/openhab_python_crud).
+What is missing in this pseudo code now is, `<base_url>`. You could use this for the cloud or for the local instance. A better approach is to use [CRUD](https://github.com/Michdo93/openhab_python_crud):
+
+```
+crud = CRUD("http://<your_ip>:8080", "<username>", "<password>")
+item_event = ItemEvent("http://<your_ip>:8080")
+response = item_event.ItemStateEvent()
+
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                topic = data.get("topic")
+                event_item_name = topic.split("/")[2]
+
+                state = crud.getState(event_item_name)
+                print(state)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
+```
+
+In the above code you will see that I used the `ItemStateEvent` because it is a little bit faster than `ItemEvent`. And you can mirror ot to your `mqtt broker` if you want to:
+
+```
+from openhab_ItemEvents import ItemEvent
+from openHAB_CRUD import CRUD
+import json
+import paho.mqtt.client as mqtt
+import string
+import random
+
+# Main function.
+if __name__ == "__main__":
+    client_pre = "openHAB"
+    client_post = "".join(random.choice(string.ascii_uppercase + string.digits) for _ in range(3))
+    client_name = client_pre[:20] + client_post
+
+    client = mqtt.Client(client_id=client_name, clean_session=True, userdata=None, protocol=mqtt.MQTTv311, transport="tcp")
+    client.username_pw_set(None)
+    qos = 0
+
+    client.connect("<your_ip>", 1883)
+
+    crud = CRUD("http://<your_ip>:8080", "<username>", "<password>")
+    item_event = ItemEvent("http://<your_ip>:8080:8080")
+    response = item_event.ItemStateEvent()
+
+    with response as events:
+        for line in events.iter_lines():
+            line = line.decode()
+
+            if "data" in line:
+                line = line.replace("data: ", "")
+
+                try:
+                    data = json.loads(line)
+                    topic = data.get("topic")
+                    event_item_name = topic.split("/")[2]
+
+                    state = crud.getState(event_item_name)
+                    client.publish(f"openhab/item/{event_item_name}/state", payload=state, qos=qos, retain=False)
+                    print(f"openhab/item/{event_item_name}/state {state}" )
+                except json.decoder.JSONDecodeError:
+                    print("Event could not be converted to JSON")
+```
 
 Since you get all ItemEvents` for all `Items`, it is recommended to make a case distinction:
 
@@ -232,6 +300,8 @@ with response as events:
             except json.decoder.JSONDecodeError:
                 print("Event could not be converted to JSON")  
 ```
+
+Of course, it is possible to query not only all `ItemEvents`, but also individual `ItemEvents` for an `Item` or individual `ItemEvents` for all `Items`.
 
 ### Retrieving ItemAddedEvent of an Item
 
