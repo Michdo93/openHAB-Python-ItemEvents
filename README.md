@@ -5,8 +5,6 @@ A simple program for accessing the ItemEvents of openHAB by using the server-sen
 
 The openHAB Item Events can only received by using `SSE`!
 
-https://github.com/Michdo93/openHAB-Python-ItemEvents
-
 You can get more informations about the [ItemEvents here](https://www.openhab.org/docs/developer/utils/events.html#item-events).
 
 To test the ItemEvents, you can play around a bit using [CRUD](https://github.com/Michdo93/openhab_python_crud).
@@ -16,7 +14,7 @@ To test the ItemEvents, you can play around a bit using [CRUD](https://github.co
 You have to install following before you can use this python script:
 
 ```
-python3 -m pip install sseclient
+python3 -m pip install requests
 ```
 
 ## Installation
