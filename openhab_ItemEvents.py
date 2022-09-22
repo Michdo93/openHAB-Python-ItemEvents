@@ -3,16 +3,49 @@ import json
 
 class ItemEvent(object):
     def __init__(self, url:str, username:str = None, password:str = None):
-        if url == "https://myopenhab.org" or url == "https://myopenhab.org/":
-            self.url = "https://myopenhab.org"
         self.url:str = url
         self.username:str = username
         self.password:str = password
         self.session = requests.Session()
+        
+        if self.username is not None and self.password is not None:
+            self.auth = (self.username, self.password)
+            self.session.auth = self.auth
+        else:
+            self.auth = None
+            self.session.auth = None
+
+        self.__login()
+        
+    def __login(self):
+        if self.url == "https://myopenhab.org" or self.url == "https://myopenhab.org/":
+            self.url = "https://myopenhab.org"
+            self.isCloud = True
+            url = self.url
+        else:
+            if self.url[-1] == "/":
+                self.url = self.url[:-1]
+            self.isCloud = False
+            url = self.url + "/rest"
+
+        try:
+            login_response = self.session.get(url, auth=self.auth, timeout=8)
+            login_response.raise_for_status()
+
+            if login_response.ok or login_response.status_code == 200:
+                self.isLoggedIn = True
+        except requests.exceptions.HTTPError as errh:
+            print(errh)
+        except requests.exceptions.ConnectionError as errc:
+            print(errc)
+        except requests.exceptions.Timeout as errt:
+            print(errt)
+        except requests.exceptions.RequestException as err:
+            print(err)
 
     def __callURL(self, url:str):
         if self.username is not None and self.password is not None:
-            pass
+            return self.session.get(url, auth=self.auth, stream=True)
         else:
             return self.session.get(url, stream=True)
 
