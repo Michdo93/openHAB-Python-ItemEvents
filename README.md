@@ -48,7 +48,7 @@ The `<base_url>` could be the ip address plus port of your local openHAB instanc
 If you want to create a connection to the `openHAB Cloud` you have to run:
 
 ```
-item_event = ItemEvent("https://myopenhab.org", "<your_email>@<your_provider>", "<email_password>")
+response = ItemEvent("https://myopenhab.org", "<your_email>@<your_provider>", "<email_password>")
 ```
 
 Please make sure to replace `<your_email>@<your_provider>` with your email address and `<email_password>` with your password that you used for your openHAB Cloud account.
@@ -58,13 +58,13 @@ Please make sure to replace `<your_email>@<your_provider>` with your email addre
 If you want to create a connection to your local `openHAB` instance you have to replace `<username>` and `<password>` with the username and password of your local openHAB account:
 
 ```
-item_event = ItemEvent("http://<your_ip>:8080", "<username>", "<password>")
+response = ItemEvent("http://<your_ip>:8080", "<username>", "<password>")
 ```
 
 Maybe there is no username and password needed:
 
 ```
-item_event = ItemEvent("http://<your_ip>:8080")
+response = ItemEvent("http://<your_ip>:8080")
 ```
 
 ### Retrieving all Item Events
@@ -72,27 +72,41 @@ item_event = ItemEvent("http://<your_ip>:8080")
 You can retrieve all `Events` from all `Items` by using:
 
 ```
-events =  item_event.ItemEvent()
+response =  item_event.ItemEvent()
 ```
 
 You will get a `list` of `dictionaries` (`dict`) in `JSON` format. So you have to loop through it:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 Of course you can checkt if it is the type `dict`:
 
 ```
-for event in events:
-    try:
-        print(type(json.loads(event.data)))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(type(data))
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 It is not possible not to use a loop for events, because on each change the server pushes. The created loop receives each new event as soon as it is pushed. If no new event is triggered on the server, there is no new iteration.
@@ -102,115 +116,121 @@ For all ItemEvents, therefore, there must be both a continuous loop and the data
 Of course, you can also access individual elements of the `dict`:
 
 ```
-for event in events:
-    try:
-        data = json.loads(event.data)
-        
-        event_topic = data.get("topic")
-        event_item_name = data.split("/")[2]
-        event_payload = eval(data.get("payload"))
-        event_type = data.get("type")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
 
-        print(event_topic)
-        print(event_item_name)
-        print(event_payload)
-        print(event_type)
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                topic = data.get("topic")
+                payload = json.loads(data.get("payload"))
+                event_type = payload.get("type")
+                event_value = payload.get("value")
+                item_event_type = data.get("type")
+
+                print(topic)
+                print(payload)
+                print(event_type)
+                print(event_value)
+                print(item_event_type)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 However, `ItemEvents` do not provide information about which type an `Item` has. An `ItemEvent` contains only the changes for an `Item` that are described by an `Event`. But you can also use the `ItemEvent` to query an `Item`. This does not require `SSE`, but a simple `REST` request:
 
 ```
-for event in events:
-    try:
-        data = json.loads(event.data)
-        
-        event_topic = data.get("topic")
-        event_item_name = data.split("/")[2]
-        event_payload = eval(data.get("payload"))
-        event_type = data.get("type")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
 
-        print(event_topic)
-        print(event_item_name)
-        print(event_payload)
-        print(event_type)
-        
-        try:
-            item_response = requests.get(<base_url> + "/items/" + event_item_name, auth=auth, headers=headers, timeout=8)
-            item_response.raise_for_status()
+        if "data" in line:
+            line = line.replace("data: ", "")
 
-            if item_response.ok or item_response.status_code == 200:
-                item = json.loads(item_response.text)
-                item_link = item.get("link")
-                item_state = item.get("state")
-                item_state_description = item.get("stateDescription")
-                item_editable = item.get("editable")
-                item_type = item.get("type")
-                item_name = item.get("name")
-                item_label = item.get("label")
-                item_group_names = item.get("groupNames")
+            try:
+                data = json.loads(line)
+                topic = data.get("topic")
+                event_item_name = topic.split("/")[2]
+                payload = json.loads(data.get("payload"))
+                event_type = payload.get("type")
+                event_value = payload.get("value")
+                item_event_type = data.get("type")
 
-                print(item_type)
-                print(item_name)
-                print(item_state)
-        except requests.exceptions.HTTPError as errh:
-            print(errh)
-        except requests.exceptions.ConnectionError as errc:
-            print(errc)
-        except requests.exceptions.Timeout as errt:
-            print(errt)
-        except requests.exceptions.RequestException as err:
-            print(err)
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+                print(topic)
+                print(event_item_name)
+                print(payload)
+                print(event_type)
+                print(event_value)
+                print(item_event_type)
+
+                try:
+                    item_response = requests.get(<base_url> + "/items/" + event_item_name, auth=auth, headers=headers, timeout=8)
+                    item_response.raise_for_status()
+
+                    if item_response.ok or item_response.status_code == 200:
+                        item = json.loads(item_response.text)
+                        item_link = item.get("link")
+                        item_state = item.get("state")
+                        item_state_description = item.get("stateDescription")
+                        item_editable = item.get("editable")
+                        item_type = item.get("type")
+                        item_name = item.get("name")
+                        item_label = item.get("label")
+                        item_group_names = item.get("groupNames")
+
+                        print(item_type)
+                        print(item_name)
+                        print(item_state)
+                except requests.exceptions.HTTPError as errh:
+                    print(errh)
+                except requests.exceptions.ConnectionError as errc:
+                    print(errc)
+                except requests.exceptions.Timeout as errt:
+                    print(errt)
+                except requests.exceptions.RequestException as err:
+                    print(err)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
-What is missing in this pseudo code now is, `<base_url>`. You could use this for the cloud or for the local instance.
+What is missing in this pseudo code now is, `<base_url>`. You could use this for the cloud or for the local instance. A better approach is to use [CRUD](https://github.com/Michdo93/openhab_python_crud).
 
 Since you get all ItemEvents` for all `Items`, it is recommended to make a case distinction:
 
 ```
-for event in events:
-    data = event.data
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
 
-    try:
-        decoded = json.loads(data)
-        event_topic = decoded.get("topic")
-        event_item_name = event_topic.split("/")[2]
-        event_payload = eval(decoded.get("payload"))
-        event_type = decoded.get("type")
-        
-        if(event_type == "ItemAddedEvent"):
-            # your code
-        elif(event_type == "ItemRemovedEvent"):
-            # your code
-        elif(event_type == "ItemUpdatedEvent"):
-            # your code
-        elif(event_type == "ItemCommandEvent"):
-            # your code
-        elif(event_type == "ItemStateEvent"):
-            event_item_type = event_payload.get("type")
-            event_item_value = event_payload.get("value")
-            print(event_item_type)
-            print(event_item_value)
-        elif(event_type == "ItemStatePredictedEvent"):
-            # your code
-        elif(event_type == "ItemStateChangedEvent"):
-            event_item_type = event_payload.get("type")
-            event_item_value = event_payload.get("value")
-            event_item_old_type = event_payload.get("oldType")
-            event_item_old_value = event_payload.get("oldValue")
-            print(event_item_type)
-            print(event_item_value)
-            print(event_item_old_type)
-            print(event_item_old_value)
-        elif(event_type == "GroupItemStateChangedEvent"):
-            # your code
-    except (json.JSONDecodeError, KeyboardInterrupt):
-        pass
-    except Exception:
-        pass    
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                topic = data.get("topic")
+                payload = json.loads(data.get("payload"))
+                event_type = payload.get("type")
+
+                if(event_type == "ItemAddedEvent"):
+                    # your code
+                elif(event_type == "ItemRemovedEvent"):
+                    # your code
+                elif(event_type == "ItemUpdatedEvent"):
+                    # your code
+                elif(event_type == "ItemCommandEvent"):
+                    # your code
+                elif(event_type == "ItemStateEvent"):
+                    # your code
+                elif(event_type == "ItemStatePredictedEvent"):
+                    # your code
+                elif(event_type == "ItemStateChangedEvent"):
+                    # your code
+                elif(event_type == "GroupItemStateChangedEvent"):
+                    # your code
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")  
 ```
 
 ### Retrieving ItemAddedEvent of an Item
@@ -218,17 +238,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemAddedEvent("testItem")
+response =  item_event.ItemAddedEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemAddedEvent of all Items
@@ -236,23 +263,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemAddedEvent()
+response =  item_event.ItemAddedEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemAddedEvent("*")
+response =  item_event.ItemAddedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemRemovedEvent of an Item
@@ -260,17 +294,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemRemovedEvent("testItem")
+response =  item_event.ItemRemovedEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemRemovedEvent of all Items
@@ -278,23 +319,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemRemovedEvent()
+response =  item_event.ItemRemovedEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemRemovedEvent("*")
+response =  item_event.ItemRemovedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemUpdatedEvent of an Item
@@ -302,17 +350,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemUpdatedEvent("testItem")
+response =  item_event.ItemUpdatedEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemUpdatedEvent of all Items
@@ -320,23 +375,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemUpdatedEvent()
+response =  item_event.ItemUpdatedEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemUpdatedEvent("*")
+response =  item_event.ItemUpdatedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemCommandEvent of an Item
@@ -344,17 +406,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemCommandEvent("testItem")
+response =  item_event.ItemCommandEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemCommandEvent of all Items
@@ -362,23 +431,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemCommandEvent()
+response =  item_event.ItemCommandEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemCommandEvent("*")
+response =  item_event.ItemCommandEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemStateEvent of an Item
@@ -386,17 +462,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemStateEvent("testItem")
+response =  item_event.ItemStateEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemStateEvent of all Items
@@ -404,23 +487,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemStateEvent()
+response =  item_event.ItemStateEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemStateEvent("*")
+response =  item_event.ItemStateEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemStatePredictedEvent of an Item
@@ -428,17 +518,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemStatePredictedEvent("testItem")
+response =  item_event.ItemStatePredictedEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemStatePredictedEvent of all Items
@@ -446,23 +543,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemStatePredictedEvent()
+response =  item_event.ItemStatePredictedEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemStatePredictedEvent("*")
+response =  item_event.ItemStatePredictedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemStateChangedEvent of an Item
@@ -470,17 +574,24 @@ for event in events:
 The function requires the name of the item as input parameter:
 
 ```
-events =  item_event.ItemStateChangedEvent("testItem")
+response =  item_event.ItemStateChangedEvent("testItem")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving ItemStateChangedEvent of all Items
@@ -488,23 +599,30 @@ for event in events:
 The function does not require a parameter:
 
 ```
-events =  item_event.ItemStateChangedEvent()
+response =  item_event.ItemStateChangedEvent()
 ```
 
 Alternatively you can pass a `"*"`:
 
 ```
-events =  item_event.ItemStateChangedEvent("*")
+response =  item_event.ItemStateChangedEvent("*")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
 
 ### Retrieving GroupItemStateChangedEvent of an Item
@@ -512,15 +630,22 @@ for event in events:
 The function requires the names of the item and of the member as input parameter:
 
 ```
-events =  item_event.GroupItemStateChangedEvent("testItem", "testGroup")
+response =  item_event.GroupItemStateChangedEvent("testItem", "testGroup")
 ```
 
 Finally, in the end you have to remember that you need to convert from JSON and you need a loop. You get again a `dict`:
 
 ```
-for event in events:
-    try:
-        print(json.loads(event.data))
-    except json.decoder.JSONDecodeError:
-        print("Event could not be converted to JSON")
+with response as events:
+    for line in events.iter_lines():
+        line = line.decode()
+
+        if "data" in line:
+            line = line.replace("data: ", "")
+
+            try:
+                data = json.loads(line)
+                print(data)
+            except json.decoder.JSONDecodeError:
+                print("Event could not be converted to JSON")
 ```
